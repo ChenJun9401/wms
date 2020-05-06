@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.wolfcode.wms.mapper.OrderBillMapper">
+    <resultMap id="BaseResultMap" type="cn.wolfcode.wms.domain.OrderBill">
+        <id column="id" property="id"/>
+        <result column="sn" property="sn"/>
+        <result column="vdate" property="vdate"/>
+        <result column="status" property="status"/>
+        <result column="totalAmount" property="totalAmount"/>
+        <result column="totalNumber" property="totalNumber"/>
+        <result column="auditTime" property="auditTime"/>
+        <result column="inputTime" property="inputTime"/>
+        <association property="inputUser" javaType="Employee" columnPrefix="inputUser_">
+            <id column="id" property="id"/>
+            <result column="name" property="name"/>
+        </association>
+        <association property="auditor" javaType="Employee" columnPrefix="auditor_">
+            <id column="id" property="id"/>
+            <result column="name" property="name"/>
+        </association>
+        <association property="supplier" javaType="Supplier" columnPrefix="supplier_">
+            <id property="id" column="id"/>
+            <result property="name" column="name"/>
+        </association>
+        <collection property="items" ofType="cn.wolfcode.wms.domain.OrderBillItem"
+                    select="cn.wolfcode.wms.mapper.OrderBillItemMapper.selectByBillId"
+                    column="id"/>
+    </resultMap>
+    <delete id="deleteByPrimaryKey">
+    delete from orderbill
+    where id = #{id}
+  </delete>
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+    insert into orderbill (sn, vdate, status, totalAmount, totalNumber, auditTime, 
+      inputTime, inputUser_id, auditor_id, supplier_id)
+    values (#{sn}, #{vdate}, #{status}, #{totalAmount}, #{totalNumber}, #{auditTime}, 
+      #{inputTime}, #{inputUser.id}, #{auditor.id}, #{supplier.id})
+  </insert>
+    <update id="updateByPrimaryKey">
+    update orderbill
+    set sn = #{sn},
+      vdate = #{vdate},
+      totalAmount = #{totalAmount},
+      totalNumber = #{totalNumber},
+      supplier_id = #{supplier.id}
+    where id = #{id}
+  </update>
+    <update id="audit">
+    update orderbill set status = #{status},auditor_id = #{auditor.id},auditTime = #{auditTime}
+    where id = #{id}
+  </update>
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+    select ob.id, ob.sn, ob.vdate, ob.status, ob.totalAmount, ob.totalNumber, ob.auditTime, ob.inputTime, ob.inputUser_id,
+        ob.auditor_id, ob.supplier_id,
+        s.id supplier_id,s.name supplier_name
+    from orderbill ob
+    join supplier s on s.id=ob.supplier_id
+    where ob.id = #{id}
+  </select>
+    <select id="selectAll" resultMap="BaseResultMap">
+    select id, sn, vdate, status, totalAmount, totalNumber, auditTime, inputTime, inputUser_id, 
+    auditor_id, supplier_id
+    from orderbill
+  </select>
+    <select id="query4Count" resultType="int">
+        select count(ob.id)
+        FROM orderbill ob JOIN employee inputUser on inputUser.id = ob.inputUser_id
+        LEFT JOIN employee auditor ON auditor.id = ob.auditor_id
+        JOIN supplier supplier ON supplier.id = ob.supplier_id
+        <include refid="where_sql"/>
+    </select>
+    <select id="query4List" resultMap="BaseResultMap">
+    SELECT
+    ob.id,
+    ob.sn,
+    ob.vdate,
+    ob.status,
+    ob.totalAmount,
+    ob.totalNumber,
+    inputUser.id inputUser_id,
+    inputUser.name inputUser_name,
+    auditor.id auditor_id,
+    auditor.name auditor_name,
+    supplier.id supplier_id,
+    supplier.name supplier_name
+    FROM orderbill ob JOIN employee inputUser on inputUser.id = ob.inputUser_id
+    LEFT JOIN employee auditor ON auditor.id = ob.auditor_id
+    JOIN supplier supplier ON supplier.id = ob.supplier_id
+        <include refid="where_sql"/>
+    limit #{start},#{pageSize}
+  </select>
+    <sql id="where_sql">
+        <where>
+            <if test="beginDate!=null">
+                and ob.vdate &gt;=#{beginDate}
+            </if>
+            <if test="endDate!=null">
+                and ob.vdate &lt;=#{endDate}
+            </if>
+            <if test="supplierId > 0">
+                and ob.supplier_id =#{supplierId}
+            </if>
+            <if test="status >= 0">
+                and ob.status =#{status}
+            </if>
+        </where>
+    </sql>
+</mapper>

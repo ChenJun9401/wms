@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.wolfcode.wms.mapper.EmployeeMapper">
+    <resultMap id="BaseResultMap" type="cn.wolfcode.wms.domain.Employee">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="email" property="email"/>
+        <result column="age" property="age"/>
+        <result column="admin" property="admin"/>
+        <!--多对一关系-->
+        <!--columnPrefix:列的前缀,声明后会自动给column拼接上这个前缀.-->
+        <association property="dept" javaType="cn.wolfcode.wms.domain.Department" columnPrefix="d_">
+            <id column="id" property="id"/>
+            <result column="name" property="name"/>
+        </association>
+        <!--多对多关系-->
+        <collection property="roles" column="id"
+                    select="cn.wolfcode.wms.mapper.RoleMapper.selectByEmployeeId"/>
+    </resultMap>
+    <delete id="deleteByPrimaryKey">
+    delete from employee
+    where id = #{id}
+    </delete>
+    <delete id="deleteRelation">
+        delete from employee_role
+        where employee_id=#{id}
+    </delete>
+    <delete id="batchDelete">
+        delete from employee where id in
+        <foreach collection="array" open="(" item="ele" separator="," close=")">
+            #{ele}
+        </foreach>
+    </delete>
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+    insert into employee (name, password, email, age, admin, dept_id)
+    values (#{name}, #{password}, #{email}, #{age}, #{admin}, #{dept.id})
+    </insert>
+    <insert id="insertRelation">
+        insert into employee_role (employee_id,role_id) values (#{employeeId},#{roleId})
+    </insert>
+    <update id="updateByPrimaryKey">
+    update employee
+    set name = #{name},
+      email = #{email},
+      age = #{age},
+      admin = #{admin},
+      dept_id = #{dept.id}
+    where id = #{id}
+    </update>
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+        <include refid="base_column"/>
+        <include refid="base_table"/>
+        where e.id = #{id}
+    </select>
+    <select id="selectAll" resultMap="BaseResultMap">
+        <include refid="base_column"/>
+        <include refid="base_table"/>
+    </select>
+
+    <select id="query4Count" resultType="int">
+        select count(e.id)
+        <include refid="base_table"/>
+        <include refid="base_where"/>
+    </select>
+
+    <select id="query4List" resultMap="BaseResultMap">
+        <include refid="base_column"/>
+        <include refid="base_table"/>
+        <include refid="base_where"/>
+        limit #{start},#{pageSize}
+    </select>
+    <select id="selectEmployeeByInfo" resultMap="BaseResultMap">
+        select id,name,admin from employee
+        where name = #{username} and password = #{password}
+    </select>
+    <!--把sql中的共同语句抽取出来,base_column表示共同的列,base_table表示共同的表-->
+    <sql id="base_column">
+        select e.id,e.name,e.email,e.age,e.admin,
+        d.id d_id,d.name d_name
+    </sql>
+    <sql id="base_table">
+        from employee e left join department d on e.dept_id = d.id
+    </sql>
+    <sql id="base_where">
+        <where>
+            <if test="keyword!=null">
+                and (e.name like concat('%',#{keyword},'%') or e.email like concat('%',#{keyword},'%'))
+            </if>
+            <if test="deptId > 0">
+                and e.dept_id = #{deptId}
+            </if>
+        </where>
+    </sql>
+</mapper>

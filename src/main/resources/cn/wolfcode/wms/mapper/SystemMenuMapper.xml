@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.wolfcode.wms.mapper.SystemMenuMapper">
+    <resultMap id="BaseResultMap" type="cn.wolfcode.wms.domain.SystemMenu">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="url" property="url"/>
+        <result column="sn" property="sn"/>
+
+        <association property="parent" javaType="cn.wolfcode.wms.domain.SystemMenu" columnPrefix="parent_">
+            <id column="id" property="id"/>
+            <result column="name" property="name"/>
+        </association>
+
+    </resultMap>
+    <delete id="deleteByPrimaryKey">
+        delete from systemmenu
+        where id = #{id} or parent_id = #{id}
+    </delete>
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into systemmenu (name, url, sn, parent_id)
+        values (#{name}, #{url}, #{sn}, #{parent.id})
+    </insert>
+    <update id="updateByPrimaryKey">
+        update systemmenu
+        set name = #{name},
+        url = #{url},
+        sn = #{sn}
+        where id = #{id}
+    </update>
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+        <include refid="base_column"/>
+        <include refid="base_table"/>
+        where child.id = #{id}
+    </select>
+    <select id="selectAll" resultMap="BaseResultMap">
+        <include refid="base_column"/>
+        <include refid="base_table"/>
+        <choose>
+            <when test="parentId == null ">
+                WHERE child.parent_id is NULL
+            </when>
+            <otherwise>
+                where child.parent_id = #{parentId}
+            </otherwise>
+        </choose>
+    </select>
+    <select id="selectByRoleId" resultType="SystemMenu">
+        SELECT menu.id,menu.name,menu.url
+        FROM systemmenu menu
+        JOIN role_menu rm ON menu.id = rm.menu_id
+        WHERE role_id = #{roleId};
+    </select>
+    <select id="selectChildMenus" resultMap="BaseResultMap">
+        select id,name from systemMenu
+        where parent_id is not null
+    </select>
+    <select id="selectByParentSn" resultType="map">
+        SELECT child.id,child.url action,child.name,child.parent_id pId
+        FROM systemmenu child
+        JOIN systemmenu parent  ON child.parent_id = parent.id
+        WHERE parent.sn = #{parentSn}
+    </select>
+    <select id="selectByParentSnAndEmpId" resultType="map">
+        SELECT child.id,child.url action,child.name,child.parent_id pId
+        FROM systemmenu child
+        JOIN systemmenu parent  ON child.parent_id = parent.id
+        JOIN role_menu rm ON child.id = rm.menu_id
+        JOIN employee_role er ON er.role_id = rm.role_id
+        WHERE parent.sn = #{parentSn} and er.employee_id = #{empId}
+    </select>
+    <sql id="base_column">
+        select
+        child.id,child.name,child.sn,child.url,
+        parent.id parent_id,parent.name parent_name
+    </sql>
+    <sql id="base_table">
+        FROM systemmenu child LEFT JOIN systemmenu parent
+        on child.parent_id = parent.id
+    </sql>
+</mapper>

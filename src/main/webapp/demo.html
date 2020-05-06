@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/js/jquery/jquery.js"></script>
+    <script src="/js/plugins/artDialog/jquery.artDialog.js?skin=blue"></script>
+    <script>
+        $(function () {
+            //演示artDialog
+            //使用json格式书写
+            $.dialog({
+                title: "你大爷的",  //设置标题
+                content: "xxoo",    //设置要显示的内容
+                ok: function () {   //设置ok按钮事件的执行函数
+                    alert("ok");    //设置警告弹窗的内容
+                },
+                lock: true, //设置是否锁定当前artDialog,就是只可操作artDialog中的内容;
+                icon: "face-smile"  //设置图标
+            });
+        });
+    </script>
+</head>
+<body>
+
+</body>
+</html>
